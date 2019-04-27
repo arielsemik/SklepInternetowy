@@ -24,8 +24,24 @@ class DBConect:
             self.logowanie()
         elif sprawdzenie_klienta == 'NIE':
             self.rejestracja_nowego_klienta()
+   # def manu_klienta(self):
 
-
+    def wyszukiwarka_produktow(self):
+        print("Witaj w wyszukiwarce produktów")
+        szukana_fraza = input("Wprowadź nazwę produktu, ktorego poszukujeszfrazę\n... ")
+        szukana_fraza = "%"+szukana_fraza+"%"
+        self.kursor = self.conn.cursor()
+        self.kursor.execute('SELECT name_p as "Nazwa produktu", description_p as "Opis produktu",price as "Cena" , quantity as "Dostępna ilość" FROM sklep_internetowy.products left join inventory on products.name_p = inventory.product where products.name_p like %s', (szukana_fraza))
+        wynik = self.kursor.fetchall()
+        print(wynik)
+        op = ['Opis', 'Cena', 'Dostępność']
+        for produkt in range(len(wynik)):
+            print("--------------------------------------")
+            print("           {:5s}" .format(wynik[produkt][0]))
+            print("--------------------------------------")
+            for x in range(len(op)):
+                print("{:30s} {}" .format(op[x], wynik[produkt][x+1]))
+            print("--------------------------------------\n")
     def logowanie(self):
         """
         Logowanie jako użytkownik
@@ -121,13 +137,37 @@ class DBConect:
             print("Dziękujemy, zapraszamy ponownie")
             self.strona_startowa()
     def zakupy(self, email):
-        self.email = email
+
+
+        ####
+        ## Pobranie ID klienta z emaila
+        ####
         self.kursor = self.conn.cursor()
-        self.kursor.execute("select id from users where email = %s")
-        wyniki = self.kursor.fetchall()
+        self.kursor.execute("select id from users where email = %s", (email))
+        numer_klienta = self.kursor.fetchall()
+        numer = numer_klienta[0][0]
+
+        ####
+        ## Tworzenie nagłówka zamówienia zakupu
+        ####
+        self.kursor = self.conn.cursor()
+        wynik2 =self.kursor.execute("INSERT INTO sklep_internetowy.order_header(id,customer) VALUES(null, %s)", numer)
+        wynik =self.kursor.fetchall()
+        self.conn.commit()
+        ####
+        ## Pobranie numeru zamowienia
+        ####
+        self.kursor = self.conn.cursor()
+        self.kursor.execute("select max(id) from order_header where customer = %s", (numer))
+        ostatnie_zamowienie = (self.kursor.fetchall())[0][0]
+
+        print(ostatnie_zamowienie)
+
 """
 """
 ab =DBConect()
-bc = ab.strona_startowa()
+#bc = ab.strona_startowa()
+#bc = ab.zakupy('asaaa@.pl')
+bc = ab.wyszukiwarka_produktow()
 print(bc)
 
