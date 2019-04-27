@@ -24,24 +24,86 @@ class DBConect:
             self.logowanie()
         elif sprawdzenie_klienta == 'NIE':
             self.rejestracja_nowego_klienta()
-   # def manu_klienta(self):
+        elif sprawdzenie_klienta == "EXIT":
+            print("Żegnaj :)")
+            exit()
+    def manu_klienta(self):
+        print("MENU KLIENTA")
+        akcja = input("-   Wpisz \"1\" aby wyszukać produkty \n-   Wpisz \"2\" aby dokonać zakupu \n----- Wyjście z programu po wpisaniu \"EXIT\" \n...").strip().upper()
+
+        if akcja == "1":
+            self.wyszukiwarka_produktow()
+        elif akcja == "2":
+            self.zakupy()
+        elif akcja == "EXIT":
+            print("Żegnaj :)")
+            exit()
 
     def wyszukiwarka_produktow(self):
+        koszyk_produktow = []
+
         print("Witaj w wyszukiwarce produktów")
-        szukana_fraza = input("Wprowadź nazwę produktu, ktorego poszukujeszfrazę\n... ")
+        #####
+        ## Klient wyszukuje produkty w bazie danych
+        #####
+        szukana_fraza = input("Wprowadź nazwę produktu, ktorego poszukujesz\n... ")
         szukana_fraza = "%"+szukana_fraza+"%"
         self.kursor = self.conn.cursor()
         self.kursor.execute('SELECT name_p as "Nazwa produktu", description_p as "Opis produktu",price as "Cena" , quantity as "Dostępna ilość" FROM sklep_internetowy.products left join inventory on products.name_p = inventory.product where products.name_p like %s', (szukana_fraza))
         wynik = self.kursor.fetchall()
         print(wynik)
-        op = ['Opis', 'Cena', 'Dostępność']
-        for produkt in range(len(wynik)):
+        #####
+        ## Ścieżka decyzyjna w zależności od ilości znalezionych produktów produktów
+        #####
+        if len(wynik) == 0:
+            print("Nie znaleźliśmy takiego produktu")
+            self.wyszukiwarka_produktow()
+        elif len(wynik) == 1:
+            op = ['Opis', 'Cena', 'Dostępność']
             print("--------------------------------------")
-            print("           {:5s}" .format(wynik[produkt][0]))
+            print("Znaleźliśmy 1 produkt wg wyszukiwanych kryteriów")
             print("--------------------------------------")
-            for x in range(len(op)):
-                print("{:30s} {}" .format(op[x], wynik[produkt][x+1]))
-            print("--------------------------------------\n")
+            for produkt in range(len(wynik)):
+                print("--------------------------------------")
+                print("       NR {}  {:5s}".format(produkt + 1, wynik[produkt][0]))
+                print("--------------------------------------")
+                for x in range(len(op)):
+                    print("{:30s} {}".format(op[x], wynik[produkt][x + 1]))
+                print("--------------------------------------\n")
+            decyzja = input("Czy chcesz ten produkt dodać do  koszyka? T/N").strip().upper()
+            if decyzja =="T":
+                koszyk_produktow.append("do skonczenia")
+            elif decyzja == "N":
+                print("OK, wracasz do menu klienta")
+                self.manu_klienta()
+            else:
+                print("Nie rozumiem odpowiedzi, wracasz do menu klienta")
+                self.manu_klienta()
+        elif len(wynik) > 1:
+            naglowki = ['Opis', 'Cena', 'Dostępność']
+            print("--------------------------------------")
+            print("Znaleźliśmy {} {}" .format(len(wynik), ["produkty" if len(wynik)<5 else "produktów"]))
+            print("--------------------------------------")
+            for produkt in range(len(wynik)):
+                print("--------------------------------------")
+                print("       NR {}  {:5s}" .format(produkt +1 ,wynik[produkt][0]))
+                print("--------------------------------------")
+                for x in range(len(naglowki)):
+                    print("{:30s} {}" .format(naglowki[x], wynik[produkt][x+1]))
+                print("--------------------------------------\n")
+            decyzja = input("Czy chcesz któryś produkt dodać do koszyka? T/N").strip().upper()
+            if decyzja == "T":
+                decyzja = int(input("Podaj numer produktu, który chcesz dodać do koszyka"))
+                koszyk_produktow.append("do skonczenia")
+            elif decyzja == "N":
+                print("OK, wracasz do menu klienta")
+                self.manu_klienta()
+            else:
+                print("Nie rozumiem odpowiedzi, wracasz do menu klienta")
+                self.manu_klienta()
+            )
+
+
     def logowanie(self):
         """
         Logowanie jako użytkownik
@@ -136,8 +198,9 @@ class DBConect:
             self.conn.rollback()
             print("Dziękujemy, zapraszamy ponownie")
             self.strona_startowa()
-    def zakupy(self, email):
 
+    def zakupy(self):
+        email = self.logowanie(email)
 
         ####
         ## Pobranie ID klienta z emaila
@@ -169,5 +232,6 @@ ab =DBConect()
 #bc = ab.strona_startowa()
 #bc = ab.zakupy('asaaa@.pl')
 bc = ab.wyszukiwarka_produktow()
+#bc = ab.manu_klienta()
 print(bc)
 
