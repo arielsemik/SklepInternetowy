@@ -9,7 +9,7 @@ class DBConect:
 
     def __init__(self):
         self.conn = pymysql.connect('localhost','root', '123456qwerty', 'sklep_internetowy', charset='utf8')
-
+    koszyk_produktow = {}
     def wyswietlenie_userow(self):
         self.kursor = self.conn.cursor()
         self.kursor.execute("select * from users")
@@ -22,12 +22,35 @@ class DBConect:
 
         if sprawdzenie_klienta == 'TAK':
             self.logowanie()
+            self.menu_klienta()
         elif sprawdzenie_klienta == 'NIE':
             self.rejestracja_nowego_klienta()
         elif sprawdzenie_klienta == "EXIT":
             print("Żegnaj :)")
             exit()
-    def manu_klienta(self):
+        """DOPISAĆ OPCJE DLA ADMINA I SPRZEDAWCY"""
+
+    def logowanie(self):
+        """
+        Logowanie jako użytkownik
+        """
+
+        email = input("Podaj email: \n")
+        haslo = input("Wprowadź hasło: \n")
+        self.kursor = self.conn.cursor()
+        self.kursor.execute("SELECT * FROM sklep_internetowy.users where email = '%s' and pass = '%s'" % (email, haslo))
+        logowanie = self.kursor.fetchall()
+        print(len(logowanie))
+        while len(logowanie) != 1:
+            print("Błędny login lub hasło")
+            email = input("Podaj email: \n")
+            haslo = input("Wprowadź hasło: \n")
+            self.kursor.execute("SELECT * FROM sklep_internetowy.users where email = '%s' and pass = '%s'" % (email, haslo))
+            logowanie = self.kursor.fetchall()
+        print("Zostałeś zalogowany!!!!")
+
+    def menu_klienta(self):
+
         print("MENU KLIENTA")
         akcja = input("-   Wpisz \"1\" aby wyszukać produkty \n-   Wpisz \"2\" aby dokonać zakupu \n----- Wyjście z programu po wpisaniu \"EXIT\" \n...").strip().upper()
 
@@ -38,18 +61,18 @@ class DBConect:
         elif akcja == "EXIT":
             print("Żegnaj :)")
             exit()
-
     def wyszukiwarka_produktow(self):
-        koszyk_produktow = []
 
-        print("Witaj w wyszukiwarce produktów")
+        print("Wyszukiwarka produktów")
+
         #####
         ## Klient wyszukuje produkty w bazie danych
         #####
-        szukana_fraza = input("Wprowadź nazwę produktu, ktorego poszukujesz\n... ")
+
+        szukana_fraza = input("Wprowadź nazwę produktu, którego poszukujesz\n... ")
         szukana_fraza = "%"+szukana_fraza+"%"
         self.kursor = self.conn.cursor()
-        self.kursor.execute('SELECT name_p as "Nazwa produktu", description_p as "Opis produktu",price as "Cena" , quantity as "Dostępna ilość" FROM sklep_internetowy.products left join inventory on products.name_p = inventory.product where products.name_p like %s', (szukana_fraza))
+        self.kursor.execute('SELECT id as "Numer produktu", name_p as "Nazwa produktu", description_p as "Opis produktu",price as "Cena" , quantity as "Dostępna ilość" FROM sklep_internetowy.products left join inventory on products.name_p = inventory.product where products.name_p like %s', (szukana_fraza))
         wynik = self.kursor.fetchall()
         print(wynik)
         #####
@@ -70,58 +93,65 @@ class DBConect:
                 for x in range(len(op)):
                     print("{:30s} {}".format(op[x], wynik[produkt][x + 1]))
                 print("--------------------------------------\n")
-            decyzja = input("Czy chcesz ten produkt dodać do  koszyka? T/N").strip().upper()
-            if decyzja =="T":
-                koszyk_produktow.append("do skonczenia")
-            elif decyzja == "N":
-                print("OK, wracasz do menu klienta")
-                self.manu_klienta()
-            else:
-                print("Nie rozumiem odpowiedzi, wracasz do menu klienta")
-                self.manu_klienta()
+
         elif len(wynik) > 1:
             naglowki = ['Opis', 'Cena', 'Dostępność']
             print("--------------------------------------")
-            print("Znaleźliśmy {} {}" .format(len(wynik), ["produkty" if len(wynik)<5 else "produktów"]))
+            print("Znaleźliśmy {} {}" .format(len(wynik), ["produkty" if len(wynik)< 5 else "produktów"]))
+
             print("--------------------------------------")
             for produkt in range(len(wynik)):
-                print("--------------------------------------")
-                print("       NR {}  {:5s}" .format(produkt +1 ,wynik[produkt][0]))
+                print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                print("  Numer produktu: {}      {:5}" .format(wynik[produkt][0], wynik[produkt][1]))
                 print("--------------------------------------")
                 for x in range(len(naglowki)):
-                    print("{:30s} {}" .format(naglowki[x], wynik[produkt][x+1]))
-                print("--------------------------------------\n")
-            decyzja = input("Czy chcesz któryś produkt dodać do koszyka? T/N").strip().upper()
-            if decyzja == "T":
-                decyzja = int(input("Podaj numer produktu, który chcesz dodać do koszyka"))
-                koszyk_produktow.append("do skonczenia")
-            elif decyzja == "N":
-                print("OK, wracasz do menu klienta")
-                self.manu_klienta()
-            else:
-                print("Nie rozumiem odpowiedzi, wracasz do menu klienta")
-                self.manu_klienta()
-            )
+                    print("{:30s} {}" .format(naglowki[x], wynik[produkt][x+2]))
+                print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n")
 
+        #### decyzja czy dodać produkt
+        decyzja = input("Czy chcesz któryś produkt dodać do koszyka? T/N").strip().upper()
+        if decyzja == "T":
+            self.dodawanie_do_koszyka()
+        else:
+            self.menu_klienta()
+    def dodawanie_do_koszyka(self):
 
-    def logowanie(self):
-        """
-        Logowanie jako użytkownik
-        """
+        numer_produktu = int(input("Podaj numer produktu, który chcesz dodać do koszyka"))
+        while numer_produktu in self.koszyk_produktow.keys():
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nTen produkt zostal już dodany do koszyka\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!sł")
+            numer_produktu = int(input("Podaj poprawny numer produktu, który chcesz dodać do koszyka"))
+        ilosc = int(input("Ile sztuk dodać do koszyka? \n ... "))
+        self.koszyk_produktow[numer_produktu] = ilosc
+        print("Produkt o numerze ", numer_produktu, " został dodany do koszyka w numerze. ", ilosc, "\n" )
+        print("Twój koszyk produktów\n")
+        for x in self.koszyk_produktow.keys():
+            print("Nazwa produktu: {}     ilość: {}\n".format(x, self.koszyk_produktow[x]))
 
-        email = input("Podaj email: \n")
-        haslo = input("Wprowadź hasło: \n")
+        #### Dodanie kolejnego produktu
+        decyzja = input("Czy chcesz wyszukać kolejny produkt? Wpisz: \n"
+                        "D - dodaj kolejny produkt\n"
+                        "Z - realizuje zamówienie)\n"
+                        "C - czyszczę koszyk").strip().upper()
+        if decyzja == "D":
+            self.wyszukiwarka_produktow()
+
+        elif decyzja == "Z":
+            print("Skończyć tworzenie zamówienia")
+        elif decyzja == "C":
+            self.koszyk_produktow.clear()
+        else:
+            print("Nie zrozumiałem odpowiedzi. Rozpocznij jeszcze raz.")
+            self.dodawanie_do_koszyka()
+
+    def realizacja_zamowienia(self):
+        emmm =
+        ####
+        ## Pobranie ID klienta z emaila
+        ####
         self.kursor = self.conn.cursor()
-        self.kursor.execute("SELECT * FROM sklep_internetowy.users where email = '%s' and pass = '%s'" % (email, haslo))
-        logowanie = self.kursor.fetchall()
-        print(len(logowanie))
-        while len(logowanie) != 1:
-            print("Błędny login lub hasło")
-            email = input("Podaj email: \n")
-            haslo = input("Wprowadź hasło: \n")
-            self.kursor.execute("SELECT * FROM sklep_internetowy.users where email = '%s' and pass = '%s'" % (email, haslo))
-            logowanie = self.kursoretchall()
-        print("Zostałeś zalogowany!!!!")
+        self.kursor.execute("select id from users where email = %s", (email_usera))
+        numer_klienta = self.kursor.fetchall()[0][0]
+        print(numer_klienta)
 
     def rejestracja_nowego_klienta(self):
         print("Witaj na stronie rejestracji\n \n")
@@ -199,14 +229,16 @@ class DBConect:
             print("Dziękujemy, zapraszamy ponownie")
             self.strona_startowa()
 
-    def zakupy(self):
-        email = self.logowanie(email)
+
+
+    """def zakupy(self):
+        emaila = self.logowanie(email)
 
         ####
         ## Pobranie ID klienta z emaila
         ####
         self.kursor = self.conn.cursor()
-        self.kursor.execute("select id from users where email = %s", (email))
+        self.kursor.execute("select id from users where email = %s", (emaila))
         numer_klienta = self.kursor.fetchall()
         numer = numer_klienta[0][0]
 
@@ -224,7 +256,7 @@ class DBConect:
         self.kursor.execute("select max(id) from order_header where customer = %s", (numer))
         ostatnie_zamowienie = (self.kursor.fetchall())[0][0]
 
-        print(ostatnie_zamowienie)
+        print(ostatnie_zamowienie)"""
 
 """
 """
