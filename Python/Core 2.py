@@ -15,21 +15,21 @@ class DBConect:
         self.kursor.execute("select * from users")
         wyniki = self.kursor.fetchall()
         print(wyniki)
-
+class Menu(DBConect, Klient):
     def strona_startowa(self):
         print("Witaj użytkowniku Sklepu internetowego NAJLEPSZY SKLEP INTERNETOWY śWIATA")
         sprawdzenie_klienta = input("-   Wpisz TAK, aby przejść do panelu logowania \n-   Wpisz NIE, aby się zarejestrować \n----- Wyjście z programu po wpisaniu EXIT \n...").strip().upper()
 
         if sprawdzenie_klienta == 'TAK':
             self.logowanie()
-            self.menu_klienta()
+            Klient.menu_klienta(self)
+
         elif sprawdzenie_klienta == 'NIE':
-            self.rejestracja_nowego_klienta()
+            Klient.rejestracja_nowego_klienta(self)
         elif sprawdzenie_klienta == "EXIT":
             print("Żegnaj :)")
             exit()
         """DOPISAĆ OPCJE DLA ADMINA I SPRZEDAWCY"""
-
     def logowanie(self):
         """
         Logowanie jako użytkownik
@@ -48,7 +48,7 @@ class DBConect:
             self.kursor.execute("SELECT * FROM sklep_internetowy.users where email = '%s' and pass = '%s'" % (email, haslo))
             logowanie = self.kursor.fetchall()
         print("Zostałeś zalogowany!!!!")
-
+class Klient(DBConect, Menu):
     def menu_klienta(self):
 
         print("MENU KLIENTA")
@@ -57,7 +57,7 @@ class DBConect:
         if akcja == "1":
             self.wyszukiwarka_produktow()
         elif akcja == "2":
-            self.zakupy()
+            self.realizacja_zamowienia()
         elif akcja == "EXIT":
             print("Żegnaj :)")
             exit()
@@ -144,7 +144,7 @@ class DBConect:
             self.dodawanie_do_koszyka()
 
     def realizacja_zamowienia(self):
-        emmm =
+
         ####
         ## Pobranie ID klienta z emaila
         ####
@@ -227,7 +227,7 @@ class DBConect:
         elif decyzja == "NIE":
             self.conn.rollback()
             print("Dziękujemy, zapraszamy ponownie")
-            self.strona_startowa()
+            Menu.strona_startowa(self)
 
 
 
@@ -260,10 +260,10 @@ class DBConect:
 
 """
 """
-ab =DBConect()
-#bc = ab.strona_startowa()
+ab =Menu()
+bc = ab.strona_startowa()
 #bc = ab.zakupy('asaaa@.pl')
-bc = ab.wyszukiwarka_produktow()
+#bc = ab.wyszukiwarka_produktow()
 #bc = ab.manu_klienta()
 print(bc)
 
