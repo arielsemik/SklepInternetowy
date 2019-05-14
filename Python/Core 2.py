@@ -43,8 +43,8 @@ class Klient(DBConect):
 
         numer_produktu = int(input("Podaj numer produktu, który chcesz dodać do koszyka"))
         while numer_produktu in self.koszyk_produktow.keys():
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nTen produkt zostal już dodany do koszyka\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!sł")
-            numer_produktu = int(input("Podaj poprawny numer produktu, który chcesz dodać do koszyka"))
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nTen produkt zostal już dodany do koszyka\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            numer_produktu = int(input("Podaj poprawny numer produktu, który chcesz dodać do koszyka\n"))
         ilosc = int(input("Ile sztuk dodać do koszyka? \n ... "))
         self.koszyk_produktow[numer_produktu] = ilosc
         print("Produkt o numerze ", numer_produktu, " został dodany do koszyka w numerze. ", ilosc, "\n")
