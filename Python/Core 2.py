@@ -14,7 +14,7 @@ class Klient(DBConect):
     def menu_klienta(self):
 
         print("MENU KLIENTA")
-        akcja = input("-    Wpisz \"1\" aby wyszukać produkty \n-    \"2\" aby dokonać zakupu \n-    Wpisz \"3\" aby oczyścić koszyk produktów \n-    Wpisz \"4\" aby zobaczyć status swoich zamówień \n----- Wyjście z programu po wpisaniu \"EXIT\" \n...").strip().upper()
+        akcja = input("-    Wpisz \"1\" aby wyszukać produkty \n-    Wpisz \"2\" aby dokonać zakupu \n-    Wpisz \"3\" aby oczyścić koszyk produktów \n-    Wpisz \"4\" aby zobaczyć status swoich zamówień \n----- Wyjście z programu po wpisaniu \"EXIT\" \n...").strip().upper()
 
         if akcja == "1":
             self.wyszukiwarka_produktow()
@@ -32,7 +32,7 @@ class Klient(DBConect):
             numer_klienta = self.kursor.fetchall()[0][0]
             self.kursor = self.conn.cursor()
             self.kursor.execute(R"select * from order_header where customer = '{}'".format(numer_klienta))
-            wszystkie_zamówienia = (self.kursor.fetchall())[0][0]
+            wszystkie_zamówienia = self.kursor.fetchall()
             print(wszystkie_zamówienia)
             self.menu_klienta()
         elif akcja == "EXIT":
