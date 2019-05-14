@@ -14,13 +14,27 @@ class Klient(DBConect):
     def menu_klienta(self):
 
         print("MENU KLIENTA")
-        akcja = input(
-            "-   Wpisz \"1\" aby wyszukać produkty \n-   Wpisz \"2\" aby dokonać zakupu \n----- Wyjście z programu po wpisaniu \"EXIT\" \n...").strip().upper()
+        akcja = input("-    Wpisz \"1\" aby wyszukać produkty \n-    \"2\" aby dokonać zakupu \n-    Wpisz \"3\" aby oczyścić koszyk produktów \n-    Wpisz \"4\" aby zobaczyć status swoich zamówień \n----- Wyjście z programu po wpisaniu \"EXIT\" \n...").strip().upper()
 
         if akcja == "1":
             self.wyszukiwarka_produktow()
+            self.menu_klienta()
         elif akcja == "2":
             self.realizacja_zamowienia(self.email)
+            self.menu_klienta()
+        elif akcja == "3":
+            self.koszyk_produktow.clear()
+            self.menu_klienta()
+
+        elif akcja == "4":
+            self.kursor = self.conn.cursor()
+            self.kursor.execute(R"select id from users where email = '{}'".format(self.email))
+            numer_klienta = self.kursor.fetchall()[0][0]
+            self.kursor = self.conn.cursor()
+            self.kursor.execute(R"select * from order_header where customer = '{}'".format(numer_klienta))
+            wszystkie_zamówienia = (self.kursor.fetchall())[0][0]
+            print(wszystkie_zamówienia)
+            self.menu_klienta()
         elif akcja == "EXIT":
             print("Żegnaj :)")
             exit()
@@ -56,8 +70,12 @@ class Klient(DBConect):
             print("Nie zrozumiałem odpowiedzi. Rozpocznij jeszcze raz.")
             self.dodawanie_do_koszyka()
     def realizacja_zamowienia(self, email):
-        self.email = email
 
+        if len(self.koszyk_produktow) == 0:
+            print("Koszyk jest pusty. Wyszukaj produkty, aby je dodać do koszyka...\n")
+            self.menu_klienta()
+
+        self.email = email
         ########
         ## Pobranie ID klienta z emaila
         ########
@@ -65,26 +83,55 @@ class Klient(DBConect):
         self.kursor = self.conn.cursor()
         self.kursor.execute(R"select id from users where email = '{}'".format(self.email))
         numer_klienta = self.kursor.fetchall()[0][0]
+
+
+
         ####
         ## Tworzenie nagłówka zamówienia zakupu
         ####
         self.kursor = self.conn.cursor()
-        wynik2 =self.kursor.execute("INSERT INTO sklep_internetowy.order_header(id,customer) VALUES(null, %s)" % numer_klienta)
+        wynik2 =self.kursor.execute(R"INSERT INTO sklep_internetowy.order_header(id,customer) VALUES(null, {})" .format(numer_klienta))
         wynik =self.kursor.fetchall()
         self.conn.commit()
         ####
         ## Pobranie numeru zamowienia
         ####
         self.kursor = self.conn.cursor()
-        self.kursor.execute("select max(id) from order_header where customer = %s", (numer_klienta))
+        self.kursor.execute(R"select max(id) from order_header where customer = {}" .format(numer_klienta))
         ostatnie_zamowienie = (self.kursor.fetchall())[0][0]
 
         print(ostatnie_zamowienie)
+        ####
+        ## Pobranie jednostki z produktu
+        ####
 
         ####
         ##Tworzenie wierszy zamówienia
         ####
+        koszyk = self.koszyk_produktow
+        for x in koszyk.keys():
+            print(x)
+            produkt = x
+            ilosc = koszyk[x]
+            ###
+            ##Pobieram jednostkę
+            ###
+            self.kursor = self.conn.cursor()
+            self.kursor.execute("select name_p from products where id = {}" .format(produkt))
+            nazwa_p = (self.kursor.fetchall())[0][0]
 
+            self.kursor = self.conn.cursor()
+            self.kursor.execute(R"select unit from inventory where product = '{}'" .format(nazwa_p))
+            wynik = self.kursor.fetchall()
+            wynik = wynik[0][0]
+
+            self.kursor = self.conn.cursor()
+            #self.kursor.execute(R"INSERT INTO sklep_internetowy.order_lines(id, order_id_fk, product_fk, quantity, unit, State) VALUES(null, 16,'słuchawki02',2,'szt', 'Nowe')")
+            self.kursor.execute(R"INSERT INTO sklep_internetowy.order_lines(id, order_id_fk, product_fk, quantity, unit, State) VALUES(null, {},'{}',{},'{}','Nowe')" .format(ostatnie_zamowienie, nazwa_p, ilosc, wynik))
+            wynik = self.kursor.fetchall()
+            print(wynik)
+            self.conn.commit()
+        print("Zamówienie numer {} zostało utworzone ze statusem 'Nowe'" .format(ostatnie_zamowienie))
 
     def wyszukiwarka_produktow(self):
 
@@ -99,7 +146,7 @@ class Klient(DBConect):
         self.kursor = self.conn.cursor()
         self.kursor.execute(r"SELECT id as 'Numer produktu', name_p as 'Nazwa produktu', description_p as 'Opis produktu',price as 'Cena' , quantity as 'Dostępna ilość' FROM sklep_internetowy.products left join inventory on products.name_p = inventory.product where products.name_p like '%s'" % (szukana_fraza))
         wynik = self.kursor.fetchall()
-        print(wynik)
+
         #####
         ## Ścieżka decyzyjna w zależności od ilości znalezionych produktów produktów
         #####
@@ -173,7 +220,6 @@ class Menu(Klient):
         self.kursor = self.conn.cursor()
         self.kursor.execute(r"SELECT * FROM sklep_internetowy.users where email = '%s' and pass = '%s'" % (self.email, haslo))
         logowanie = self.kursor.fetchall()
-        print(len(logowanie))
         while len(logowanie) != 1:
             print("Błędny login lub hasło")
             self.email = input("Podaj email: \n")
