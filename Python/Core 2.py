@@ -31,9 +31,15 @@ class Klient(DBConect):
             self.kursor.execute(R"select id from users where email = '{}'".format(self.email))
             numer_klienta = self.kursor.fetchall()[0][0]
             self.kursor = self.conn.cursor()
-            self.kursor.execute(R"select * from order_header where customer = '{}'".format(numer_klienta))
-            wszystkie_zamówienia = self.kursor.fetchall()
-            print(wszystkie_zamówienia)
+            self.kursor.execute(R"select id as 'Numer zamówienia', create_date as 'Data zamówienia', State as 'Status zamówienia'  from order_header where customer = '{}'".format(numer_klienta))
+            wszystkie_zamowienia = self.kursor.fetchall()
+            print(wszystkie_zamowienia)
+            """print("Numer zamówienia       Data zamówienia       Status zamówienia")
+            for x in wszystkie_zamowienia:
+                zamowienie = wszystkie_zamowienia[x]
+                print("{}       {}       {}" .format(zamowienie[0],  zamowienie[1], zamowienie[2]))"""
+
+
             self.menu_klienta()
         elif akcja == "EXIT":
             print("Żegnaj :)")
@@ -100,7 +106,6 @@ class Klient(DBConect):
         self.kursor.execute(R"select max(id) from order_header where customer = {}" .format(numer_klienta))
         ostatnie_zamowienie = (self.kursor.fetchall())[0][0]
 
-        print(ostatnie_zamowienie)
         ####
         ## Pobranie jednostki z produktu
         ####
@@ -110,7 +115,6 @@ class Klient(DBConect):
         ####
         koszyk = self.koszyk_produktow
         for x in koszyk.keys():
-            print(x)
             produkt = x
             ilosc = koszyk[x]
             ###
@@ -126,10 +130,8 @@ class Klient(DBConect):
             wynik = wynik[0][0]
 
             self.kursor = self.conn.cursor()
-            #self.kursor.execute(R"INSERT INTO sklep_internetowy.order_lines(id, order_id_fk, product_fk, quantity, unit, State) VALUES(null, 16,'słuchawki02',2,'szt', 'Nowe')")
             self.kursor.execute(R"INSERT INTO sklep_internetowy.order_lines(id, order_id_fk, product_fk, quantity, unit, State) VALUES(null, {},'{}',{},'{}','Nowe')" .format(ostatnie_zamowienie, nazwa_p, ilosc, wynik))
             wynik = self.kursor.fetchall()
-            print(wynik)
             self.conn.commit()
         print("Zamówienie numer {} zostało utworzone ze statusem 'Nowe'" .format(ostatnie_zamowienie))
 
@@ -305,37 +307,6 @@ class Menu(Klient):
             self.conn.rollback()
             print("Dziękujemy, zapraszamy ponownie")
             self.strona_startowa()
-
-
-    """def zakupy(self):
-        emaila = self.logowanie(email)
-
-        ####
-        ## Pobranie ID klienta z emaila
-        ####
-        self.kursor = self.conn.cursor()
-        self.kursor.execute("select id from users where email = %s", (emaila))
-        numer_klienta = self.kursor.fetchall()
-        numer = numer_klienta[0][0]
-
-        ####
-        ## Tworzenie nagłówka zamówienia zakupu
-        ####
-        self.kursor = self.conn.cursor()
-        wynik2 =self.kursor.execute("INSERT INTO sklep_internetowy.order_header(id,customer) VALUES(null, %s)", numer)
-        wynik =self.kursor.fetchall()
-        self.conn.commit()
-        ####
-        ## Pobranie numeru zamowienia
-        ####
-        self.kursor = self.conn.cursor()
-        self.kursor.execute("select max(id) from order_header where customer = %s", (numer))
-        ostatnie_zamowienie = (self.kursor.fetchall())[0][0]
-
-        print(ostatnie_zamowienie)"""
-
-
-
 
 
 
