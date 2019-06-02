@@ -1,1 +1,3 @@
 # SklepInternetowy
+
+Only in Python
